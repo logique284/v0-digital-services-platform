@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useSearchParams } from 'react'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -73,6 +74,8 @@ const categoryData = {
     ]
   }
 }
+
+export const dynamic = 'force-dynamic'
 
 export default function ProductsPage() {
   const searchParams = useSearchParams()
