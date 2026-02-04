@@ -45,33 +45,7 @@ const categories = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#0066CC] to-[#4A90E2] rounded-lg flex items-center justify-center text-white font-bold text-lg">
-              AV
-            </div>
-            <span className="text-xl font-bold text-foreground hidden sm:inline">ATLASVAULT</span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Link href="/products">
-              <Button variant="ghost" className="hidden sm:inline-flex">
-                Shop
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="ghost">My Account</Button>
-            </Link>
-            <Link href="/products">
-              <Button className="bg-primary hover:bg-primary/90 text-white">
-                Start Shopping
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div className="w-full bg-background">
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary/5 via-background to-accent/5 py-16 sm:py-24 lg:py-32">
@@ -217,53 +191,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card py-8 sm:py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#0066CC] to-[#4A90E2] rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                  AV
-                </div>
-                <span className="font-bold text-foreground">AtlasVault</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Your trusted digital services marketplace
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Shop</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/products?category=vault" className="hover:text-primary">The Vault</Link></li>
-                <li><Link href="/products?category=telecom" className="hover:text-primary">Telecom Hub</Link></li>
-                <li><Link href="/products?category=gaming" className="hover:text-primary">Gaming Corner</Link></li>
-                <li><Link href="/products?category=business" className="hover:text-primary">Business Suite</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Account</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/dashboard" className="hover:text-primary">My Dashboard</Link></li>
-                <li><Link href="/cart" className="hover:text-primary">My Cart</Link></li>
-                <li><Link href="/dashboard" className="hover:text-primary">My Orders</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="#" className="hover:text-primary">Contact Us</Link></li>
-                <li><Link href="#" className="hover:text-primary">FAQ</Link></li>
-                <li><Link href="#" className="hover:text-primary">Privacy Policy</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-border pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>&copy; 2024 AtlasVault. All rights reserved.</p>
-            <p>Trusted by customers across Tunisia</p>
-          </div>
-        </div>
-      </footer>
     </div>
-  );
+  )
 }

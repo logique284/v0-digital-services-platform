@@ -1,199 +1,260 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Trash2, Plus, Minus, ShoppingCart, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
-interface CartItem {
-  id: string
-  service_id: string
-  quantity: number
-  service?: {
-    id: string
-    name: string
-    price: number
-    description: string
-  }
+// Mock cart data - replace with actual state management (Zustand/Redux)
+interface CartItemType {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  quantity: number;
+  image: string;
 }
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [loading, setLoading] = useState(false)
-  const [quantities, setQuantities] = useState<Record<string, number>>({})
+  const [cartItems, setCartItems] = useState<CartItemType[]>([
+    {
+      id: 'netflix-premium',
+      name: 'Netflix Premium',
+      price: 15.99,
+      category: 'The Vault',
+      quantity: 1,
+      image: '/placeholder.svg?height=100&width=100',
+    },
+  ]);
+  const [couponCode, setCouponCode] = useState('');
+  const [discount, setDiscount] = useState(0);
 
-  const total = cartItems.reduce((sum, item) => {
-    const qty = quantities[item.service_id] || item.quantity || 1
-    return sum + ((item.service?.price || 0) * qty)
-  }, 0)
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const discountAmount = (subtotal * discount) / 100;
+  const total = subtotal - discountAmount;
 
-  const handleQuantityChange = (serviceId: string, newQty: number) => {
-    if (newQty < 1) return
-    setQuantities(prev => ({ ...prev, [serviceId]: newQty }))
-  }
-
-  const removeFromCart = (serviceId: string) => {
-    setCartItems(prev => prev.filter(item => item.service_id !== serviceId))
-    setQuantities(prev => {
-      const newQty = { ...prev }
-      delete newQty[serviceId]
-      return newQty
-    })
-    toast.success('Removed from cart')
-  }
-
-  const handleCheckout = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      toast.error('Please sign in to checkout')
-      return
+  const updateQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      removeFromCart(id);
+      return;
     }
+    setCartItems(items =>
+      items.map(item =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
 
-    setLoading(true)
-    try {
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert([{
-          user_id: user.id,
-          total_amount: total,
-          status: 'pending',
-          payment_method: 'card'
-        }])
-        .select()
-        .single()
+  const removeFromCart = (id: string) => {
+    setCartItems(items => items.filter(item => item.id !== id));
+    toast.success('Item removed from cart');
+  };
 
-      if (orderError) throw orderError
-
-      // Create order items
-      const orderItems = cartItems.map(item => ({
-        order_id: order.id,
-        service_id: item.service_id,
-        quantity: quantities[item.service_id] || item.quantity || 1,
-        unit_price: item.service?.price || 0
-      }))
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems)
-
-      if (itemsError) throw itemsError
-
-      toast.success('Order created! Proceeding to payment...')
-      // Redirect to payment page
-      // router.push(`/checkout/${order.id}`)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create order')
-    } finally {
-      setLoading(false)
+  const applyCoupon = () => {
+    if (couponCode === 'SAVE10') {
+      setDiscount(10);
+      toast.success('Coupon applied! 10% discount');
+      setCouponCode('');
+    } else if (couponCode === 'SAVE20') {
+      setDiscount(20);
+      toast.success('Coupon applied! 20% discount');
+      setCouponCode('');
+    } else {
+      toast.error('Invalid coupon code');
     }
+  };
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+          <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+          <h1 className="text-3xl font-bold text-foreground mb-2">Your Cart is Empty</h1>
+          <p className="text-muted-foreground mb-8">Start shopping to add items to your cart</p>
+          <Link href="/products">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white">
+              Continue Shopping
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Link href="/products" className="flex items-center gap-2 text-primary hover:underline mb-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Header */}
+        <div className="mb-8">
+          <Link href="/products" className="flex items-center gap-2 text-primary hover:text-primary/80 mb-4">
             <ArrowLeft className="w-4 h-4" />
-            Back to Products
+            <span>Continue Shopping</span>
           </Link>
-          <h1 className="text-3xl font-bold">Shopping Cart</h1>
+          <h1 className="text-4xl font-bold text-foreground">Shopping Cart</h1>
+          <p className="text-muted-foreground mt-2">{cartItems.length} item(s) in cart</p>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="md:col-span-2">
-            {cartItems.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground mb-4">Your cart is empty</p>
-                  <Link href="/products">
-                    <Button>Continue Shopping</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {cartItems.map((item) => (
-                  <Card key={item.service_id}>
-                    <CardContent className="py-4">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{item.service?.name}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {item.service?.description}
+          <div className="lg:col-span-2">
+            <div className="space-y-4">
+              {cartItems.map((item) => (
+                <Card key={item.id} className="overflow-hidden">
+                  <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6">
+                    {/* Product Image */}
+                    <Link href={`/product/${item.id}`}>
+                      <div className="bg-muted rounded-lg overflow-hidden flex-shrink-0 h-24 w-24">
+                        <img
+                          src={item.image || "/placeholder.svg"}
+                          alt={item.name}
+                          className="w-full h-full object-cover hover:opacity-80 transition-opacity"
+                        />
+                      </div>
+                    </Link>
+
+                    {/* Product Details */}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                          <div>
+                            <Link href={`/product/${item.id}`}>
+                              <h3 className="font-semibold text-foreground hover:text-primary transition-colors">
+                                {item.name}
+                              </h3>
+                            </Link>
+                            <p className="text-sm text-muted-foreground">{item.category}</p>
+                          </div>
+                          <p className="text-lg font-bold text-primary">
+                            {(item.price * item.quantity).toFixed(2)} TND
                           </p>
-                          <p className="text-lg font-bold text-primary mt-2">
-                            {item.service?.price} TND
-                          </p>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            type="number"
-                            min="1"
-                            value={quantities[item.service_id] || item.quantity || 1}
-                            onChange={(e) => handleQuantityChange(item.service_id, parseInt(e.target.value))}
-                            className="w-16"
-                          />
-                          <button
-                            onClick={() => removeFromCart(item.service_id)}
-                            className="p-2 hover:bg-destructive/10 rounded text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Summary */}
-          {cartItems.length > 0 && (
-            <div>
-              <Card className="sticky top-4">
-                <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span>{total.toFixed(2)} TND</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span>Free</span>
-                    </div>
-                    <div className="border-t pt-2 mt-2 flex justify-between font-bold">
-                      <span>Total</span>
-                      <span className="text-primary">{total.toFixed(2)} TND</span>
+                      {/* Quantity & Remove */}
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="flex items-center border border-border rounded-lg">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="p-2 hover:bg-muted transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            readOnly
+                            className="w-12 text-center border-x border-border outline-none"
+                          />
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="p-2 hover:bg-muted transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <Button 
-                    className="w-full"
-                    onClick={handleCheckout}
-                    disabled={loading}
-                  >
-                    {loading ? 'Processing...' : 'Proceed to Checkout'}
-                  </Button>
-                </CardContent>
-              </Card>
+                </Card>
+              ))}
             </div>
-          )}
+          </div>
+
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-20 overflow-hidden">
+              <div className="p-6 space-y-6">
+                <h2 className="text-xl font-bold text-foreground">Order Summary</h2>
+
+                {/* Pricing Breakdown */}
+                <div className="space-y-3 border-b border-border pb-4">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>{subtotal.toFixed(2)} TND</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-success">
+                      <span>Discount ({discount}%)</span>
+                      <span>-{discountAmount.toFixed(2)} TND</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold text-foreground text-lg">
+                    <span>Total</span>
+                    <span className="text-primary">{total.toFixed(2)} TND</span>
+                  </div>
+                </div>
+
+                {/* Coupon Code */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Coupon Code</label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter code"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={applyCoupon}
+                      disabled={!couponCode}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Try: SAVE10 or SAVE20</p>
+                </div>
+
+                {/* Checkout Button */}
+                <Button className="w-full bg-primary hover:bg-primary/90 text-white py-6 text-base font-semibold">
+                  Proceed to Checkout
+                </Button>
+
+                {/* Continue Shopping */}
+                <Link href="/products">
+                  <Button variant="outline" className="w-full bg-transparent">
+                    Continue Shopping
+                  </Button>
+                </Link>
+
+                {/* Security Info */}
+                <div className="bg-muted rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground">Secure Checkout</p>
+                  <p className="text-xs text-muted-foreground">
+                    Your payment information is encrypted and secure. We accept D17, Flouci, and card payments.
+                  </p>
+                </div>
+
+                {/* Benefits */}
+                <div className="space-y-2 border-t border-border pt-4">
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    <span>✓</span>
+                    <span>Free delivery on all orders</span>
+                  </div>
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    <span>✓</span>
+                    <span>Instant account activation</span>
+                  </div>
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    <span>✓</span>
+                    <span>24/7 WhatsApp support</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
-  )
+  );
 }
