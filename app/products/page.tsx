@@ -1,12 +1,18 @@
 'use client'
 
-import { useEffect, useState, useSearchParams } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { supabase } from '@/lib/supabase'
-import { ShoppingCart, Heart, Filter } from 'lucide-react'
+import { CardContent } from "@/components/ui/card"
+import { CardTitle } from "@/components/ui/card"
+import { CardHeader } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { useEffect, useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { ProductCard } from '@/components/product-card'
+import { ProductFilters } from '@/components/product-filters'
 import { toast } from 'sonner'
+import { ShoppingCart } from 'lucide-react'
+import { Heart } from 'lucide-react'
 
 interface Service {
   id: string
@@ -14,9 +20,9 @@ interface Service {
   description: string
   price: number
   category: string
-  image_url?: string
-  rating?: number
-  reviews_count?: number
+  slug: string
+  rating: number
+  reviews_count: number
 }
 
 const categoryData = {
@@ -25,12 +31,12 @@ const categoryData = {
     description: 'International streaming subscriptions',
     gradient: 'from-[#0066CC] to-[#4A90E2]',
     items: [
-      { id: 'netflix', name: 'Netflix Premium', price: 15.99, description: '4K Ultra HD streaming' },
-      { id: 'disney', name: 'Disney+ Subscription', price: 10.99, description: 'Disney, Pixar, Marvel & Star Wars' },
-      { id: 'spotify', name: 'Spotify Premium', price: 12.99, description: 'Ad-free music streaming' },
-      { id: 'appletv', name: 'Apple TV+', price: 9.99, description: 'Original series and films' },
-      { id: 'prime', name: 'Amazon Prime Video', price: 11.99, description: 'Movies, shows & Prime shipping' },
-      { id: 'hbo', name: 'Max (HBO)', price: 13.99, description: 'HBO, DC, and Max Originals' },
+      { id: 'netflix', slug: 'netflix-premium', name: 'Netflix Premium', price: 15.99, description: '4K Ultra HD streaming' },
+      { id: 'disney', slug: 'disney-plus', name: 'Disney+ Subscription', price: 10.99, description: 'Disney, Pixar, Marvel & Star Wars' },
+      { id: 'spotify', slug: 'spotify-premium', name: 'Spotify Premium', price: 12.99, description: 'Ad-free music streaming' },
+      { id: 'appletv', slug: 'apple-tv', name: 'Apple TV+', price: 9.99, description: 'Original series and films' },
+      { id: 'prime', slug: 'prime-video', name: 'Amazon Prime Video', price: 11.99, description: 'Movies, shows & Prime shipping' },
+      { id: 'hbo', slug: 'max-hbo', name: 'Max (HBO)', price: 13.99, description: 'HBO, DC, and Max Originals' },
     ]
   },
   telecom: {
@@ -38,12 +44,12 @@ const categoryData = {
     description: 'Internet bundles and mobile top-ups',
     gradient: 'from-[#2ECC71] to-[#27AE60]',
     items: [
-      { id: 'ooredoo-internet', name: 'Ooredoo 10GB', price: 19.99, description: '10GB internet + calls' },
-      { id: 'orange-internet', name: 'Orange 10GB', price: 19.99, description: '10GB internet + unlimited SMS' },
-      { id: 'tt-internet', name: 'TT 10GB', price: 17.99, description: '10GB + free hotspot' },
-      { id: 'ooredoo-topup', name: 'Ooredoo 20 TND', price: 20, description: 'Mobile credit top-up' },
-      { id: 'orange-topup', name: 'Orange 20 TND', price: 20, description: 'Mobile credit top-up' },
-      { id: 'tt-topup', name: 'TT 20 TND', price: 20, description: 'Mobile credit top-up' },
+      { id: 'ooredoo-internet', slug: 'ooredoo-10gb', name: 'Ooredoo 10GB', price: 19.99, description: '10GB internet + calls' },
+      { id: 'orange-internet', slug: 'orange-10gb', name: 'Orange 10GB', price: 19.99, description: '10GB internet + unlimited SMS' },
+      { id: 'tt-internet', slug: 'tt-10gb', name: 'TT 10GB', price: 17.99, description: '10GB + free hotspot' },
+      { id: 'ooredoo-topup', slug: 'ooredoo-topup', name: 'Ooredoo 20 TND', price: 20, description: 'Mobile credit top-up' },
+      { id: 'orange-topup', slug: 'orange-topup', name: 'Orange 20 TND', price: 20, description: 'Mobile credit top-up' },
+      { id: 'tt-topup', slug: 'tt-topup', name: 'TT 20 TND', price: 20, description: 'Mobile credit top-up' },
     ]
   },
   gaming: {
@@ -51,12 +57,12 @@ const categoryData = {
     description: 'Gaming credits and subscriptions',
     gradient: 'from-[#FF6B35] to-[#FF4500]',
     items: [
-      { id: 'freefire-diamonds', name: 'Free Fire 520 Diamonds', price: 9.99, description: 'In-game currency' },
-      { id: 'pubg-uc', name: 'PUBG 1200 UC', price: 29.99, description: 'PlayerUnknown Battlegrounds currency' },
-      { id: 'steam-50', name: 'Steam Gift Card 50€', price: 55, description: 'Steam store credit' },
-      { id: 'playstation-20', name: 'PlayStation 20€', price: 22, description: 'PSN store credit' },
-      { id: 'xbox-20', name: 'Xbox 20€', price: 22, description: 'Xbox store credit' },
-      { id: 'gamepass', name: 'Xbox Game Pass', price: 16.99, description: '1 month unlimited games' },
+      { id: 'freefire-diamonds', slug: 'free-fire-diamonds', name: 'Free Fire 520 Diamonds', price: 9.99, description: 'In-game currency' },
+      { id: 'pubg-uc', slug: 'pubg-uc', name: 'PUBG 1200 UC', price: 29.99, description: 'PlayerUnknown Battlegrounds currency' },
+      { id: 'steam-50', slug: 'steam-50', name: 'Steam Gift Card 50€', price: 55, description: 'Steam store credit' },
+      { id: 'playstation-20', slug: 'playstation-20', name: 'PlayStation 20€', price: 22, description: 'PSN store credit' },
+      { id: 'xbox-20', slug: 'xbox-20', name: 'Xbox 20€', price: 22, description: 'Xbox store credit' },
+      { id: 'gamepass', slug: 'xbox-gamepass', name: 'Xbox Game Pass', price: 16.99, description: '1 month unlimited games' },
     ]
   },
   business: {
@@ -64,21 +70,27 @@ const categoryData = {
     description: 'Professional tools and services',
     gradient: 'from-[#5B4A9F] to-[#0066CC]',
     items: [
-      { id: 'canva-pro', name: 'Canva Pro', price: 14.99, description: 'Design tool subscription' },
-      { id: 'chatgpt-plus', name: 'ChatGPT Plus', price: 19.99, description: 'AI assistant premium' },
-      { id: 'hostinger-monthly', name: 'Hostinger Hosting', price: 3.99, description: 'Web hosting plan' },
-      { id: 'domain-annual', name: 'Domain Registration', price: 9.99, description: '1 year domain' },
-      { id: 'adobe-creative', name: 'Adobe Creative Cloud', price: 59.99, description: 'All Adobe apps' },
-      { id: 'notion-plus', name: 'Notion Plus', price: 11.99, description: 'Workspace management' },
+      { id: 'canva-pro', slug: 'canva-pro', name: 'Canva Pro', price: 14.99, description: 'Design tool subscription' },
+      { id: 'chatgpt-plus', slug: 'chatgpt-plus', name: 'ChatGPT Plus', price: 19.99, description: 'AI assistant premium' },
+      { id: 'hostinger-monthly', slug: 'hostinger', name: 'Hostinger Hosting', price: 3.99, description: 'Web hosting plan' },
+      { id: 'domain-annual', slug: 'domain', name: 'Domain Registration', price: 9.99, description: '1 year domain' },
+      { id: 'adobe-creative', slug: 'adobe-cloud', name: 'Adobe Creative Cloud', price: 59.99, description: 'All Adobe apps' },
+      { id: 'notion-plus', slug: 'notion-plus', name: 'Notion Plus', price: 11.99, description: 'Workspace management' },
     ]
   }
 }
 
 export default function ProductsPage() {
   const searchParams = useSearchParams()
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('vault')
   const [services, setServices] = useState<Service[]>([])
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [cart, setCart] = useState<string[]>([])
+  
+  // Filter states
+  const [sortBy, setSortBy] = useState<'popular' | 'price-low' | 'price-high' | 'rating' | 'newest'>('popular')
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100])
+  const [minRating, setMinRating] = useState(0)
 
   useEffect(() => {
     const category = searchParams?.get('category') || 'vault'
@@ -88,68 +100,83 @@ export default function ProductsPage() {
     const categoryItems = categoryData[category as keyof typeof categoryData]?.items || []
     const formattedServices = categoryItems.map((item: any) => ({
       id: item.id,
+      slug: item.slug,
       name: item.name,
       description: item.description,
       price: item.price,
       category: category,
-      image_url: '',
       rating: Math.random() * 2 + 3.5,
       reviews_count: Math.floor(Math.random() * 500) + 50,
     }))
     setServices(formattedServices)
   }, [searchParams])
 
+  // Filter and sort products
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = services.filter(
+      (product) => product.price >= priceRange[0] && product.price <= priceRange[1] && product.rating >= minRating
+    )
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'price-low':
+        filtered.sort((a, b) => a.price - b.price)
+        break
+      case 'price-high':
+        filtered.sort((a, b) => b.price - a.price)
+        break
+      case 'rating':
+        filtered.sort((a, b) => b.rating - a.rating)
+        break
+      case 'newest':
+        // Reverse order for newest
+        filtered = filtered.reverse()
+        break
+      case 'popular':
+      default:
+        // Sort by review count (popularity)
+        filtered.sort((a, b) => b.reviews_count - a.reviews_count)
+    }
+
+    return filtered
+  }, [services, sortBy, priceRange, minRating])
+
   const addToCart = (serviceId: string) => {
-    setCart(prev => [...prev, serviceId])
+    setCart((prev) => [...prev, serviceId])
     toast.success('Added to cart')
+  }
+
+  const toggleFavorite = (serviceId: string) => {
+    setFavorites((prev) => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(serviceId)) {
+        newFavorites.delete(serviceId)
+        toast.success('Removed from favorites')
+      } else {
+        newFavorites.add(serviceId)
+        toast.success('Added to favorites')
+      }
+      return newFavorites
+    })
   }
 
   const currentCategory = categoryData[selectedCategory as keyof typeof categoryData]
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#0066CC] to-[#4A90E2] rounded-lg flex items-center justify-center text-white font-bold">
-              AV
-            </div>
-            <span className="text-xl font-bold text-foreground hidden sm:inline">AtlasVault</span>
-          </Link>
-          <div className="flex gap-2 sm:gap-4 items-center">
-            <Link href="/cart">
-              <Button variant="ghost" size="sm" className="relative">
-                <ShoppingCart className="w-5 h-5" />
-                {cart.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-destructive text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                    {cart.length}
-                  </span>
-                )}
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm">Account</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
       {/* Category Tabs */}
       <div className="border-b border-border sticky top-16 z-30 bg-background/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto gap-1 py-4">
           {Object.entries(categoryData).map(([key, data]) => (
-            <Link key={key} href={`/products?category=${key}`}>
+            <a key={key} href={`/products?category=${key}`}>
               <button
                 className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === key
-                    ? 'bg-primary text-white'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  selectedCategory === key ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
                 {data.name}
               </button>
-            </Link>
+            </a>
           ))}
         </div>
       </div>
@@ -160,66 +187,68 @@ export default function ProductsPage() {
           <>
             {/* Category Header */}
             <div className={`bg-gradient-to-r ${currentCategory.gradient} rounded-xl p-8 sm:p-12 text-white mb-12`}>
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-                {currentCategory.name}
-              </h1>
-              <p className="text-base sm:text-lg opacity-90">
-                {currentCategory.description}
-              </p>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">{currentCategory.name}</h1>
+              <p className="text-base sm:text-lg opacity-90">{currentCategory.description}</p>
             </div>
 
-            {/* Services Grid */}
-            {services.length === 0 ? (
-              <div className="flex justify-center items-center min-h-96">
-                <p className="text-muted-foreground">No services available</p>
+            {/* Filters and Products Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {/* Filters Sidebar */}
+              <div className="md:col-span-1">
+                <ProductFilters
+                  sortBy={sortBy}
+                  priceRange={priceRange}
+                  minRating={minRating}
+                  onSortChange={setSortBy}
+                  onPriceChange={setPriceRange}
+                  onRatingChange={setMinRating}
+                  onReset={() => {
+                    setSortBy('popular')
+                    setPriceRange([0, 100])
+                    setMinRating(0)
+                  }}
+                  productCount={filteredAndSortedProducts.length}
+                />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {services.map((service) => (
-                  <Card key={service.id} className="overflow-hidden hover:shadow-lg hover:border-primary/50 transition-all duration-300 flex flex-col">
-                    <div className={`bg-gradient-to-br ${currentCategory.gradient} h-32 flex items-center justify-center relative`}>
-                      <div className="absolute inset-0 bg-black/10" />
-                    </div>
-                    <CardHeader className="flex-1">
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1">
-                          <CardTitle className="line-clamp-2 text-lg">
-                            {service.name}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {service.description}
-                          </p>
-                        </div>
-                        <button className="text-muted-foreground hover:text-destructive flex-shrink-0">
-                          <Heart className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <p className="text-2xl font-bold text-primary">
-                            {service.price.toFixed(2)} TND
-                          </p>
-                          {service.rating && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              ⭐ {service.rating.toFixed(1)} ({service.reviews_count} reviews)
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <Button 
-                        className="w-full bg-primary hover:bg-primary/90 text-white"
-                        onClick={() => addToCart(service.id)}
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        Add to Cart
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+
+              {/* Products Grid */}
+              <div className="md:col-span-3">
+                {filteredAndSortedProducts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <p className="text-lg text-muted-foreground mb-4">No products found matching your filters</p>
+                    <button
+                      onClick={() => {
+                        setSortBy('popular')
+                        setPriceRange([0, 100])
+                        setMinRating(0)
+                      }}
+                      className="text-primary hover:underline text-sm"
+                    >
+                      Reset filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredAndSortedProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        id={product.id}
+                        slug={product.slug}
+                        name={product.name}
+                        description={product.description}
+                        price={product.price}
+                        rating={product.rating}
+                        reviewCount={product.reviews_count}
+                        gradient={currentCategory.gradient}
+                        onAddToCart={addToCart}
+                        isFavorited={favorites.has(product.id)}
+                        onToggleFavorite={toggleFavorite}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </>
         )}
       </main>

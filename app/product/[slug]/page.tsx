@@ -2,22 +2,23 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Star, ShoppingCart, Heart, CheckCircle, Clock, AlertCircle, ChevronRight } from 'lucide-react';
+import { Star, ShoppingCart, Heart, CheckCircle, Clock, AlertCircle, ChevronRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { PRODUCTS_DATABASE } from '@/lib/products-db';
+
+const categoryColors: Record<string, string> = {
+  vault: 'from-[#0066CC] to-[#4A90E2]',
+  telecom: 'from-[#2ECC71] to-[#27AE60]',
+  gaming: 'from-[#FF6B35] to-[#FF4500]',
+  business: 'from-[#5B4A9F] to-[#0066CC]'
+};
 
 // Mock product data - replace with actual database queries
 const productDatabase: Record<string, any> = {
+  ...PRODUCTS_DATABASE,
   'netflix-premium': {
-    id: 'netflix-premium',
-    name: 'Netflix Premium',
-    category: 'vault',
-    categoryName: 'The Vault',
-    price: 15.99,
-    rating: 4.8,
-    reviews: 324,
-    image: '/placeholder.svg?height=500&width=500',
-    description: 'Unlimited movies, TV shows, and games on multiple screens. Stream in 4K Ultra HD with surround sound.',
+    ...PRODUCTS_DATABASE['netflix-premium'],
     features: [
       'Watch on 4 screens at the same time',
       '4K + HDR available',
