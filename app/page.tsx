@@ -61,12 +61,12 @@ export default function HomePage() {
                 Shop
               </Button>
             </Link>
-            <Link href="/login">
-              <Button variant="ghost">Sign In</Button>
+            <Link href="/dashboard">
+              <Button variant="ghost">My Account</Button>
             </Link>
-            <Link href="/signup">
+            <Link href="/products">
               <Button className="bg-primary hover:bg-primary/90 text-white">
-                Get Started
+                Start Shopping
               </Button>
             </Link>
           </div>
@@ -83,18 +83,11 @@ export default function HomePage() {
             Access streaming subscriptions, telecom services, gaming credits, and business tools—all in one place. 
             Secure payments with multiple trusted options.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/products">
-              <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white">
-                Start Shopping
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
-                Create Account
-              </Button>
-            </Link>
-          </div>
+          <Link href="/products">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white">
+              Start Shopping Now
+            </Button>
+          </Link>
         </div>
       </section>
 
@@ -216,9 +209,9 @@ export default function HomePage() {
           <p className="text-muted-foreground mb-8 text-lg">
             Join thousands of satisfied customers. Start shopping today.
           </p>
-          <Link href="/signup">
+          <Link href="/products">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-white">
-              Create Your Account
+              Browse Services Now
             </Button>
           </Link>
         </div>
@@ -251,9 +244,9 @@ export default function HomePage() {
             <div>
               <h4 className="font-semibold text-foreground mb-3">Account</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/login" className="hover:text-primary">Sign In</Link></li>
-                <li><Link href="/signup" className="hover:text-primary">Create Account</Link></li>
-                <li><Link href="/dashboard" className="hover:text-primary">Dashboard</Link></li>
+                <li><Link href="/dashboard" className="hover:text-primary">My Dashboard</Link></li>
+                <li><Link href="/cart" className="hover:text-primary">My Cart</Link></li>
+                <li><Link href="/dashboard" className="hover:text-primary">My Orders</Link></li>
               </ul>
             </div>
             <div>
