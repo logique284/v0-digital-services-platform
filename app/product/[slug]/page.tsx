@@ -237,18 +237,10 @@ export default function ProductDetailPage({
                 </div>
                 <Button
                   size="lg"
-                  className="flex-1 bg-primary hover:bg-primary/90 text-white gap-2"
-                  onClick={handleAddToCart}
-                  disabled={!product.inStock}
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  Add to Cart
-                </Button>
-                <Button
-                  size="lg"
                   variant="outline"
                   onClick={() => setIsFavorited(!isFavorited)}
                   className="px-6"
+                  title="Add to favorites"
                 >
                   <Heart className={`w-5 h-5 ${isFavorited ? 'fill-destructive text-destructive' : ''}`} />
                 </Button>

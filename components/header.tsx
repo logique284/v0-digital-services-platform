@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Search, ShoppingCart, MessageCircle, Home } from 'lucide-react';
+import { Menu, X, Search, ShoppingCart, MessageCircle, Home, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const categories = [
@@ -15,6 +15,7 @@ const categories = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   return (
     <>
@@ -58,6 +59,9 @@ export function Header() {
               <Link href="/about" className="text-foreground hover:text-primary font-medium transition-colors">
                 About
               </Link>
+              <Link href="/admin" className="text-foreground hover:text-primary font-medium transition-colors text-xs bg-primary/10 px-3 py-1 rounded-lg">
+                Admin
+              </Link>
             </nav>
 
             {/* Right Actions */}
@@ -87,6 +91,18 @@ export function Header() {
                   0
                 </span>
               </Link>
+
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={() => {
+                  setDarkMode(!darkMode);
+                  document.documentElement.classList.toggle('dark');
+                }}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                title="Toggle dark mode"
+              >
+                {darkMode ? <Sun className="w-5 h-5 text-foreground" /> : <Moon className="w-5 h-5 text-foreground" />}
+              </button>
 
               {/* WhatsApp Support */}
               <a
