@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Star, ShoppingCart, Heart, CheckCircle, Clock, AlertCircle, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Star, ShoppingCart, Heart, CheckCircle, Clock, AlertCircle, ChevronRight, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PRODUCTS_DATABASE } from '@/lib/products-db';
+import { useCart } from '@/lib/cart-context';
 
 const categoryColors: Record<string, string> = {
   vault: 'from-[#0066CC] to-[#4A90E2]',
@@ -89,9 +90,25 @@ export default function ProductDetailPage({
   params: { slug: string }
 }) {
   const product = productDatabase[params.slug];
+  const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+
+  const handleOrderViaWhatsApp = () => {
+    const message = `Hello! I want to order:\n\n📦 Product: ${product.name}\n💰 Price: ${product.price} TND\n📊 Quantity: ${quantity}\n\nPlease help me complete this order.`;
+    const whatsappUrl = `https://wa.me/21650000000?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleAddToCart = () => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      slug: params.slug
+    });
+  };
 
   if (!product) {
     return (
@@ -221,6 +238,7 @@ export default function ProductDetailPage({
                 <Button
                   size="lg"
                   className="flex-1 bg-primary hover:bg-primary/90 text-white gap-2"
+                  onClick={handleAddToCart}
                   disabled={!product.inStock}
                 >
                   <ShoppingCart className="w-5 h-5" />
@@ -241,6 +259,16 @@ export default function ProductDetailPage({
                 <Clock className="w-4 h-4" />
                 <span>Account activated within 5-10 minutes after payment</span>
               </div>
+
+              {/* WhatsApp Ordering */}
+              <Button
+                size="lg"
+                className="w-full bg-green-500 hover:bg-green-600 text-white gap-2"
+                onClick={handleOrderViaWhatsApp}
+              >
+                <MessageCircle className="w-5 h-5" />
+                Order via WhatsApp
+              </Button>
             </div>
           </div>
         </div>

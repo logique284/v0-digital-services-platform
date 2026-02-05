@@ -1,18 +1,13 @@
 'use client'
 
-import { CardContent } from "@/components/ui/card"
-import { CardTitle } from "@/components/ui/card"
-import { CardHeader } from "@/components/ui/card"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { useEffect, useState, useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect } from "react"
+
+import { useState, useMemo, Suspense } from 'react'
+import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/product-card'
 import { ProductFilters } from '@/components/product-filters'
 import { toast } from 'sonner'
-import { ShoppingCart } from 'lucide-react'
-import { Heart } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface Service {
   id: string
@@ -80,69 +75,56 @@ const categoryData = {
   }
 }
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams()
-  const [selectedCategory, setSelectedCategory] = useState<string>('vault')
-  const [services, setServices] = useState<Service[]>([])
-  const [favorites, setFavorites] = useState<Set<string>>(new Set())
-  const [cart, setCart] = useState<string[]>([])
+  const router = useRouter()
   
-  // Filter states
+  // Get category from URL with fallback
+  const selectedCategory = searchParams?.get('category') || 'vault'
+  
+  // Initialize state with proper defaults
   const [sortBy, setSortBy] = useState<'popular' | 'price-low' | 'price-high' | 'rating' | 'newest'>('popular')
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100])
   const [minRating, setMinRating] = useState(0)
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    const category = searchParams?.get('category') || 'vault'
-    setSelectedCategory(category)
-
-    // Load mock data based on category
-    const categoryItems = categoryData[category as keyof typeof categoryData]?.items || []
-    const formattedServices = categoryItems.map((item: any) => ({
+  // Generate products once per category
+  const categoryServices = useMemo(() => {
+    const categoryItems = categoryData[selectedCategory as keyof typeof categoryData]?.items || []
+    return categoryItems.map((item: any) => ({
       id: item.id,
       slug: item.slug,
       name: item.name,
       description: item.description,
       price: item.price,
-      category: category,
+      category: selectedCategory,
       rating: Math.random() * 2 + 3.5,
       reviews_count: Math.floor(Math.random() * 500) + 50,
     }))
-    setServices(formattedServices)
-  }, [searchParams])
+  }, [selectedCategory])
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = services.filter(
+    let filtered = categoryServices.filter(
       (product) => product.price >= priceRange[0] && product.price <= priceRange[1] && product.rating >= minRating
     )
 
-    // Apply sorting
     switch (sortBy) {
       case 'price-low':
-        filtered.sort((a, b) => a.price - b.price)
-        break
+        return filtered.sort((a, b) => a.price - b.price)
       case 'price-high':
-        filtered.sort((a, b) => b.price - a.price)
-        break
+        return filtered.sort((a, b) => b.price - a.price)
       case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
+        return filtered.sort((a, b) => b.rating - a.rating)
       case 'newest':
-        // Reverse order for newest
-        filtered = filtered.reverse()
-        break
+        return filtered.reverse()
       case 'popular':
       default:
-        // Sort by review count (popularity)
-        filtered.sort((a, b) => b.reviews_count - a.reviews_count)
+        return filtered.sort((a, b) => b.reviews_count - a.reviews_count)
     }
-
-    return filtered
-  }, [services, sortBy, priceRange, minRating])
+  }, [categoryServices, sortBy, priceRange, minRating])
 
   const addToCart = (serviceId: string) => {
-    setCart((prev) => [...prev, serviceId])
     toast.success('Added to cart')
   }
 
@@ -160,23 +142,26 @@ export default function ProductsPage() {
     })
   }
 
+  const handleCategoryChange = (category: string) => {
+    router.push(`/products?category=${category}`)
+  }
+
   const currentCategory = categoryData[selectedCategory as keyof typeof categoryData]
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Category Tabs */}
       <div className="border-b border-border sticky top-16 z-30 bg-background/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto gap-1 py-4">
           {Object.entries(categoryData).map(([key, data]) => (
-            <a key={key} href={`/products?category=${key}`}>
-              <button
-                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === key ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                {data.name}
-              </button>
-            </a>
+            <button
+              key={key}
+              onClick={() => handleCategoryChange(key)}
+              className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+                selectedCategory === key ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              {data.name}
+            </button>
           ))}
         </div>
       </div>
@@ -253,5 +238,13 @@ export default function ProductsPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <ProductsContent />
+    </Suspense>
   )
 }

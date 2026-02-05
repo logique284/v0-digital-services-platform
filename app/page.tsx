@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Smartphone, Gamepad2, Film, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HeroPromo } from '@/components/hero-promo';
 
 const categories = [
   {
@@ -46,6 +47,12 @@ const categories = [
 export default function HomePage() {
   return (
     <div className="w-full bg-background">
+      {/* Promotional Hero Section */}
+      <section className="py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <HeroPromo />
+        </div>
+      </section>
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary/5 via-background to-accent/5 py-16 sm:py-24 lg:py-32">

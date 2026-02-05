@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { WhatsAppWidget } from '@/components/whatsapp-widget'
+import { CartProvider } from '@/lib/cart-context'
 import './globals.css'
 
 const _geist = Geist({ subsets: ['latin'] })
@@ -41,10 +42,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased flex flex-col min-h-screen`}>
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <WhatsAppWidget />
+        <CartProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <WhatsAppWidget />
+        </CartProvider>
         <Analytics />
       </body>
     </html>
